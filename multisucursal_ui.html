@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sistema Multiagente - Prototype</title>
+  <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; }
+    .card { background: white; border-radius: 12px; box-shadow: 0 6px 18px rgba(15,23,42,0.06); }
+    .kanban-card { background: linear-gradient(180deg, #ffffff 0%, #fbfbff 100%); border-radius: 8px; padding: 10px; box-shadow: 0 4px 10px rgba(2,6,23,0.06); }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div id="app" class="min-h-screen">
+    <!-- Sidebar + Main -->
+    <div class="max-w-6xl mx-auto py-8 px-4">
+
+      <!-- Top bar -->
+      <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center space-x-4">
+          <div class="w-12 h-12 flex items-center justify-center rounded-lg bg-blue-800 text-white text-xl font-bold">MS</div>
+          <div>
+            <div class="text-lg font-bold">Multiagente Sanabria</div>
+            <div class="text-sm text-gray-500">Sistema prototipo · 2 sucursales</div>
+          </div>
+        </div>
+        <div class="flex items-center space-x-3">
+          <button id="btn-logout" class="px-3 py-2 rounded-md bg-red-50 text-red-600 text-sm">Salir</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-12 gap-6">
+        <!-- Sidebar -->
+        <aside class="col-span-12 md:col-span-3">
+          <div class="card p-4 mb-6">
+            <div class="text-sm font-semibold mb-2">Menú</div>
+            <nav class="flex flex-col space-y-1 text-sm">
+              <button class="menu-btn py-2 px-3 rounded hover:bg-gray-50 text-left" data-view="dashboard">Dashboard</button>
+              <button class="menu-btn py-2 px-3 rounded hover:bg-gray-50 text-left" data-view="new-tramite">Registrar Trámite</button>
+              <button class="menu-btn py-2 px-3 rounded hover:bg-gray-50 text-left" data-view="new-pago">Registrar Pago</button>
+              <button class="menu-btn py-2 px-3 rounded hover:bg-gray-50 text-left" data-view="fotografia">Fotografía</button>
+              <button class="menu-btn py-2 px-3 rounded hover:bg-gray-50 text-left" data-view="kanban">Bandeja (Pendientes)</button>
+              <button class="menu-btn py-2 px-3 rounded hover:bg-gray-50 text-left" data-view="historial">Historial</button>
+              <button class="menu-btn py-2 px-3 rounded hover:bg-gray-50 text-left" data-view="admin">Panel Admin</button>
+            </nav>
+          </div>
+
+          <div class="card p-4">
+            <div class="text-sm font-semibold mb-2">Seleccionar Sucursal</div>
+            <div class="flex flex-col space-y-2">
+              <label class="inline-flex items-center"><input type="radio" name="sucursal" value="local1" checked class="mr-2"> Local 1 (RENIEC & Fotos)</label>
+              <label class="inline-flex items-center"><input type="radio" name="sucursal" value="local2" class="mr-2"> Local 2 (Multiagente + Bancos)</label>
+            </div>
+          </div>
+
+        </aside>
+
+        <!-- Main content -->
+        <main class="col-span-12 md:col-span-9">
+
+          <!-- Views container -->
+          <div id="views">
+
+            <!-- Dashboard -->
+            <section data-view="dashboard" class="view card p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold">Dashboard</h2>
+                <div class="text-sm text-gray-600">Resumen rápido</div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="p-4 card">
+                  <div class="text-xs text-gray-500">Clientes atendidos (hoy)</div>
+                  <div id="stat-clientes" class="text-2xl font-bold">0</div>
+                </div>
+                <div class="p-4 card">
+                  <div class="text-xs text-gray-500">Ingresos (hoy)</div>
+                  <div id="stat-ingresos" class="text-2xl font-bold">S/ 0.00</div>
+                </div>
+                <div class="p-4 card">
+                  <div class="text-xs text-gray-500">Pagos registrados</div>
+                  <div id="stat-pagos" class="text-2xl font-bold">0</div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="card p-4">
+                  <div class="text-sm font-semibold mb-2">Servicios más solicitados (últimos 7 días)</div>
+                  <div id="chart-services" class="text-sm text-gray-500">(gráfica demo)</div>
+                </div>
+
+                <div class="card p-4">
+                  <div class="text-sm font-semibold mb-2">Formas de pago</div>
+                  <div id="chart-payments" class="text-sm text-gray-500">(gráfica demo)</div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Registrar Trámite -->
+            <section data-view="new-tramite" class="view card p-6 hidden">
+              <h2 class="text-lg font-semibold mb-4">Registrar Trámite RENIEC</h2>
+              <form id="form-tramite" class="space-y-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input required name="cliente" placeholder="Nombre del cliente" class="p-2 border rounded" />
+                  <select name="tipo" required class="p-2 border rounded">
+                    <option value="DNI Nuevo">DNI Nuevo</option>
+                    <option value="Renovación">Renovación</option>
+                    <option value="Duplicado">Duplicado</option>
+                    <option value="Rectificación">Rectificación</option>
+                    <option value="Pasaporte">Pasaporte</option>
+                    <option value="Otros">Otros</option>
+                          </select>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <input name="monto" placeholder="Monto (S/)" type="number" step="0.01" class="p-2 border rounded" />
+                          <select name="formaPago" class="p-2 border rounded">
+                            <option value="Efectivo">Efectivo</option>
+                            <option value="Yape">Yape</option>
+                            <option value="Plin">Plin</option>
+                          </select>
+                          <select name="estado" class="p-2 border rounded">
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="En proceso">En proceso</option>
+                            <option value="Entregado">Entregado</option>
+                          </select>
+                        </div>
+                        <textarea name="notas" placeholder="Notas (opcional)" class="p-2 border rounded w-full"></textarea>
+                        <div class="flex items-center space-x-2">
+                          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Guardar trámite</button>
+                          <button type="button" id="reset-tramite" class="px-4 py-2 bg-gray-100 rounded">Limpiar</button>
+                        </div>
+                      </form>
+                    </section>
+
+                    <!-- Registrar Pago -->
+                    <section data-view="new-pago" class="view card p-6 hidden">
+                      <h2 class="text-lg font-semibold mb-4">Registrar Pago Bancario</h2>
+                      <form id="form-pago" class="space-y-3">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <select name="banco" required class="p-2 border rounded">
+                            <option value="Banco de la Nación">Banco de la Nación</option>
+                            <option value="BBVA">BBVA</option>
+                            <option value="Interbank">Interbank</option>
+                            <option value="KasNet">KasNet</option>
+                          </select>
+                          <input name="monto" required type="number" step="0.01" placeholder="Monto (S/)" class="p-2 border rounded" />
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <input name="operacion" placeholder="Nº Operación / Voucher" class="p-2 border rounded" />
+                          <input name="dni" placeholder="DNI del cliente" class="p-2 border rounded" />
+                        </div>
+                        <div class="flex items-center space-x-2">
+                          <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded">Registrar pago</button>
+                          <button type="button" id="reset-pago" class="px-4 py-2 bg-gray-100 rounded">Limpiar</button>
+                        </div>
+                      </form>
+
+                      <div class="mt-6">
+                        <h3 class="text-sm font-semibold mb-2">Pagos recientes</h3>
+                        <table class="w-full text-sm">
+                          <thead class="text-left text-gray-500">
+                            <tr><th>Fecha</th><th>Banco</th><th>Monto</th><th>Operación</th></tr>
+                          </thead>
+                          <tbody id="tabla-pagos" class="text-sm"></tbody>
+                        </table>
+                      </div>
+                    </section>
+
+                    <!-- Fotografía -->
+                    <section data-view="fotografia" class="view card p-6 hidden">
+                      <h2 class="text-lg font-semibold mb-4">Módulo Fotografía</h2>
+                      <form id="form-foto" class="space-y-3">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <input name="cliente" placeholder="Nombre del cliente" class="p-2 border rounded" />
+                          <select name="tipo" class="p-2 border rounded">
+                            <option>DNI</option>
+                            <option>Pasaporte</option>
+                            <option>Carnet</option>
+                            <option>Medida personalizada</option>
+                          </select>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <input name="monto" placeholder="Monto (S/)" type="number" step="0.01" class="p-2 border rounded" />
+                          <select name="entrega" class="p-2 border rounded">
+                            <option>Impresa</option>
+                            <option>Digital</option>
+                            <option>Ambas</option>
+                          </select>
+                          <input name="archivo" type="file" class="p-2 border rounded" />
+                        </div>
+                        <div class="flex items-center space-x-2">
+                          <button class="px-4 py-2 bg-indigo-600 text-white rounded">Guardar foto</button>
+                        </div>
+                      </form>
+                    </section>
+
+                    <!-- Kanban -->
+                    <section data-view="kanban" class="view hidden">
+                      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <h3 class="text-sm font-semibold mb-2">Pendientes</h3>
+                          <div id="col-pendientes" class="space-y-3 min-h-40"></div>
+                        </div>
+                        <div>
+                          <h3 class="text-sm font-semibold mb-2">En Proceso</h3>
+                          <div id="col-proceso" class="space-y-3 min-h-40"></div>
+                        </div>
+                        <div>
+                          <h3 class="text-sm font-semibold mb-2">Entregados</h3>
+                          <div id="col-entregados" class="space-y-3 min-h-40"></div>
+                        </div>
+                      </div>
+                    </section>
+
+                    <!-- Historial -->
+                    <section data-view="historial" class="view card p-6 hidden">
+                      <h2 class="text-lg font-semibold mb-4">Historial / Búsqueda</h2>
+                      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                        <input id="q" placeholder="Nombre o DNI" class="p-2 border rounded" />
+                        <select id="q-tipo" class="p-2 border rounded">
+                          <option value="">Todos</option>
+                          <option value="DNI Nuevo">DNI</option>
+                          <option value="Pasaporte">Pasaporte</option>
+                        </select>
+                        <button id="btn-buscar" class="px-4 py-2 bg-blue-600 text-white rounded">Buscar</button>
+                      </div>
+                      <div>
+                        <table class="w-full text-sm">
+                          <thead class="text-left text-gray-500">
+                            <tr><th>Fecha</th><th>Cliente</th><th>Servicio</th><th>Monto</th><th>Estado</th></tr>
+                          </thead>
+                          <tbody id="tabla-historial" class="text-sm"></tbody>
+                        </table>
+                      </div>
+                    </section>
+
+                    <!-- Admin -->
+                    <section data-view="admin" class="view card p-6 hidden">
+                      <h2 class="text-lg font-semibold mb-4">Panel Administrativo</h2>
+                      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div class="p-4 card">
+                          <div class="text-xs text-gray-500">Total hoy</div>
+                          <div id="admin-total" class="text-2xl font-bold">S/ 0.00</div>
+                        </div>
+                        <div class="p-4 card">
+                          <div class="text-xs text-gray-500">Local 1</div>
+                          <div id="admin-l1" class="text-2xl font-bold">S/ 0.00</div>
+                        </div>
+                        <div class="p-4 card">
+                          <div class="text-xs text-gray-500">Local 2</div>
+                          <div id="admin-l2" class="text-2xl font-bold">S/ 0.00</div>
+                        </div>
+                      </div>
+
+                      <div class="card p-4">
+                        <h3 class="text-sm font-semibold mb-2">Acciones</h3>
+                        <div class="flex space-x-2">
+                          <button id="export-json" class="px-3 py-2 bg-gray-100 rounded">Exportar JSON</button>
+                          <button id="limpiar" class="px-3 py-2 bg-red-50 text-red-600 rounded">Limpiar todo</button>
+                        </div>
+                      </div>
+
+                    </section>
+
+                  </div>
+
+                </main>
+              </div>
+
+            </div>
+          </div>
+
+          <script>
+            // Simple single-file prototype logic (stores data in localStorage)
+            const state = {
+              tramites: JSON.parse(localStorage.getItem('tramites') || '[]'),
+              pagos: JSON.parse(localStorage.getItem('pagos') || '[]'),
+              fotos: JSON.parse(localStorage.getItem('fotos') || '[]'),
+            };
+
+            function saveState(){
+              localStorage.setItem('tramites', JSON.stringify(state.tramites));
+              localStorage.setItem('pagos', JSON.stringify(state.pagos));
+              localStorage.setItem('fotos', JSON.stringify(state.fotos));
+              renderAll();
+            }
+
+            function showView(name){
+              document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+              const el = document.querySelector(`[data-view="${name}"]`);
+              if(el) el.classList.remove('hidden');
+            }
+
+            // Menu buttons
+            document.querySelectorAll('.menu-btn').forEach(b => b.addEventListener('click', e => {
+              const view = b.getAttribute('data-view');
+              if(view) showView(view);
+            }));
+
+            // Forms
+            document.getElementById('form-tramite').addEventListener('submit', e => {
+              e.preventDefault();
+              const f = e.target;
+              const suc = document.querySelector('input[name="sucursal"]:checked').value;
+              state.tramites.push({
+                id: Date.now(),
+                fecha: new Date().toLocaleString(),
+                cliente: f.cliente.value,
+                tipo: f.tipo.value,
+                monto: parseFloat(f.monto.value || 0),
+                formaPago: f.formaPago.value,
+                estado: f.estado.value,
+                notas: f.notas.value,
+                sucursal: suc,
+              });
+              f.reset();
+              saveState();
+              alert('Trámite registrado');
+            });
+
+            document.getElementById('form-pago').addEventListener('submit', e => {
+                e.preventDefault();
+                const f = e.target;
+                const suc = document.querySelector('input[name="sucursal"]:checked').value;
+                state.pagos.push({
+                  id: Date.now(),
+                  fecha: new Date().toLocaleString(),
+                  banco: f.banco.value,
+                  monto: parseFloat(f.monto.value || 0),
+                  operacion: f.operacion.value,
+                  dni: f.dni.value,
+                  sucursal: suc,
+                });
+                f.reset();
+                saveState();
+                alert('Pago registrado');
+            });
+
+            // Fotografía (simple)
+            document.getElementById('form-foto').addEventListener('submit', e => {
+                e.preventDefault();
+                const f = e.target;
+                const suc = document.querySelector('input[name="sucursal"]:checked').value;
+                state.fotos.push({
+                  id: Date.now(),
+                  fecha: new Date().toLocaleString(),
+                  cliente: f.cliente.value,
+                  tipo: f.tipo.value,
+                  monto: parseFloat(f.monto.value || 0),
+                  entrega: f.entrega.value,
+                  sucursal: suc,
+                });
+                f.reset();
+                saveState();
+                alert('Foto registrada');
+            });
+
+            // Render helpers
+            function renderAll(){
+              document.getElementById('stat-clientes').innerText = state.tramites.length + state.fotos.length;
+              const total = state.tramites.reduce((s,t)=>s+(t.monto||0),0) + state.fotos.reduce((s,f)=>s+(f.monto||0),0) + state.pagos.reduce((s,p)=>s+(p.monto||0),0);
+              document.getElementById('stat-ingresos').innerText = 'S/ ' + total.toFixed(2);
+              document.getElementById('stat-pagos').innerText = state.pagos.length;
+
+              // tabla pagos
+              const tpl = state.pagos.slice().reverse().map(p => `
+        <tr><td>${p.fecha}</td><td>${p.banco}</td><td>S/ ${p.monto.toFixed(2)}</td><td>${p.operacion}</td></tr>
+      `).join('');
+              document.getElementById('tabla-pagos').innerHTML = tpl;
+
+              // historial
+              const histTpl = state.tramites.concat(state.fotos).slice().reverse().map(it => {
+                const serv = it.tipo || 'Servicio';
+                const monto = it.monto ? 'S/ ' + (it.monto||0).toFixed(2) : '-';
+                const estado = it.estado || '-';
+                return `<tr><td>${it.fecha}</td><td>${it.cliente||'-'}</td><td>${serv}</td><td>${monto}</td><td>${estado}</td></tr>`;
+              }).join('');
+              document.getElementById('tabla-historial').innerHTML = histTpl;
+
+              // kanban
+              const pend = state.tramites.filter(t=>t.estado==='Pendiente').concat(state.pagos.filter(p=>p.estado==='Pendiente'));
+              const proc = state.tramites.filter(t=>t.estado==='En proceso');
+              const ent = state.tramites.filter(t=>t.estado==='Entregado');
+              document.getElementById('col-pendientes').innerHTML = (pend.length? pend.map(c=>`<div class="kanban-card"> <div class="font-semibold">${c.cliente||c.banco}</div><div class="text-xs text-gray-500">${c.tipo||c.operacion||''}</div></div>`).join('') : '<div class="text-gray-500">No hay pendientes</div>');
+              document.getElementById('col-proceso').innerHTML = (proc.length? proc.map(c=>`<div class="kanban-card"> <div class="font-semibold">${c.cliente}</div><div class="text-xs text-gray-500">${c.tipo}</div></div>`).join('') : '<div class="text-gray-500">No hay en proceso</div>');
+              document.getElementById('col-entregados').innerHTML = (ent.length? ent.map(c=>`<div class="kanban-card"> <div class="font-semibold">${c.cliente}</div><div class="text-xs text-gray-500">${c.tipo}</div></div>`).join('') : '<div class="text-gray-500">No hay entregados</div>');
+
+              // admin totals by sucursal
+              const l1 = state.tramites.filter(t=>t.sucursal==='local1').reduce((s,t)=>s+(t.monto||0),0) + state.fotos.filter(f=>f.sucursal==='local1').reduce((s,f)=>s+(f.monto||0),0) + state.pagos.filter(p=>p.sucursal==='local1').reduce((s,p)=>s+(p.monto||0),0);
+              const l2 = state.tramites.filter(t=>t.sucursal==='local2').reduce((s,t)=>s+(t.monto||0),0) + state.fotos.filter(f=>f.sucursal==='local2').reduce((s,f)=>s+(f.monto||0),0) + state.pagos.filter(p=>p.sucursal==='local2').reduce((s,p)=>s+(p.monto||0),0);
+              document.getElementById('admin-total').innerText = 'S/ ' + (l1+l2).toFixed(2);
+              document.getElementById('admin-l1').innerText = 'S/ ' + l1.toFixed(2);
+              document.getElementById('admin-l2').innerText = 'S/ ' + l2.toFixed(2);
+            }
+
+            // Buttons
+            document.getElementById('export-json').addEventListener('click', ()=>{
+              const data = {tramites: state.tramites, pagos: state.pagos, fotos: state.fotos};
+              const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a'); a.href = url; a.download = 'multiagente_data.json'; a.click(); URL.revokeObjectURL(url);
+            });
+            document.getElementById('limpiar').addEventListener('click', ()=>{
+              if(confirm('¿Limpiar todos los datos de prueba?')){
+                state.tramites = []; state.pagos = []; state.fotos = []; saveState();
+              }
+            });
+
+            // Search
+            document.getElementById('btn-buscar').addEventListener('click', ()=>{
+              const q = document.getElementById('q').value.toLowerCase();
+              const tipo = document.getElementById('q-tipo').value;
+              const items = state.tramites.concat(state.fotos).filter(i=>{
+                const matchesQ = !q || (i.cliente && i.cliente.toLowerCase().includes(q)) || (i.dni && i.dni.includes(q));
+                const matchesTipo = !tipo || i.tipo===tipo;
+                return matchesQ && matchesTipo;
+              });
+              document.getElementById('tabla-historial').innerHTML = items.map(it => `<tr><td>${it.fecha}</td><td>${it.cliente||'-'}</td><td>${it.tipo||'Pago'}</td><td>${it.monto?('S/ '+it.monto.toFixed(2)):'-'}</td><td>${it.estado||'-'}</td></tr>`).join('')
+            });
+
+            // Init
+            showView('dashboard');
+            renderAll();
+
+            // Simple logout behavior
+            document.getElementById('btn-logout').addEventListener('click', ()=>{ if(confirm('Cerrar sesión?')){ alert('Función de logout (demo).'); }});
+
+          </script>
+        </body>
+        </html>
+    
